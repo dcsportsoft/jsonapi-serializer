@@ -46,3 +46,6 @@ Gemfile.lock
 
 # Gem builds
 /*.gem
+
+# For RubyMine
+.idea
