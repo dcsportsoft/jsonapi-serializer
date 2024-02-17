@@ -2,6 +2,7 @@
 
 require 'active_support'
 require 'active_support/concern'
+require 'active_support/core_ext/kernel/reporting'
 require 'digest/sha1'
 
 module FastJsonapi
@@ -57,7 +58,7 @@ module FastJsonapi
         relationships = {} if fieldset == []
 
         relationships.each_with_object({}) do |(key, relationship), hash|
-          included = includes_list.present? && includes_list.include?(key)
+          included = includes_list.present? && (includes_list.include?(key) || includes_list.include?(key.to_s))
           relationship.serialize(record, included, params, hash)
         end
       end
@@ -173,7 +174,9 @@ module FastJsonapi
 
           next unless relationship_item&.include_relationship?(record, params)
 
-          included_objects = Array(relationship_item.fetch_associated_object(record, params))
+          included_objects = silence_warnings do
+            Array(relationship_item.fetch_associated_object(record, params))
+          end
           next if included_objects.empty?
 
           static_serializer = relationship_item.static_serializer
@@ -193,7 +196,7 @@ module FastJsonapi
 
             known_included_objects << code
 
-            included_records << serializer.record_hash(inc_obj, fieldsets[record_type], includes_list, params)
+            included_records << serializer.record_hash(inc_obj, fieldsets[record_type], include_item.last, params)
           end
         end
       end
